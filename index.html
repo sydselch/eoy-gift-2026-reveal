@@ -468,6 +468,8 @@
   window.addEventListener('keydown', function(e){
     if(isLocked() && [' ','Spacebar','ArrowDown','ArrowUp','PageDown','PageUp','Home','End'].indexOf(e.key)>=0){ e.preventDefault(); }
   });
+  // keep gate clicks from bubbling to the page's "click anywhere to jump down" handler
+  gate.addEventListener('click', function(e){ e.stopPropagation(); });
   var unlocked=false; try{ unlocked=(sessionStorage.getItem(KEY)==='1'); }catch(e){}
   if(unlocked){ unlock(); } else { lock(); }
   form.addEventListener('submit', async function(e){
