@@ -432,6 +432,31 @@
   #gate button:hover{background:#fff; border-color:#fff;}
   #gate .g-err{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:#ff8a3d; text-transform:uppercase; min-height:14px; opacity:0; transition:opacity .15s;}
   #gate .g-err.show{opacity:1;}
+
+  /* ---------- Unlock reveal (plays once, only when the password is entered) ----------
+     The gate does a soft focus-pull dissolve while the first screen assembles:
+     starfield settles in, topbar drops, then the globe / intro line / CTA rise in a stagger.
+     Only the inner intro children + topbar + stars are animated — never the .copy / hero /
+     bottombar layers, which the scroll parallax drives via inline styles. */
+  #gate{ transition:opacity .6s ease, transform .85s cubic-bezier(.2,.7,.2,1), filter .6s ease; }
+  #gate.leaving{ opacity:0; transform:scale(1.07); filter:blur(9px); pointer-events:none; }
+
+  @keyframes introStarsIn{ from{opacity:0; transform:scale(1.09);} to{opacity:1; transform:scale(1);} }
+  @keyframes introBarIn{ from{opacity:0; transform:translateY(-16px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes introIconIn{ from{opacity:0; transform:translate(-50%,32px) scale(.9);} to{opacity:1; transform:translate(-50%,0) scale(1);} }
+  @keyframes introTextIn{ from{opacity:0; transform:translateY(calc(3.7vh + 34px));} to{opacity:1; transform:translateY(3.7vh);} }
+  @keyframes introCtaIn{ from{opacity:0; transform:translate(-50%,24px);} to{opacity:.8; transform:translate(-50%,0);} }
+
+  html.intro-reveal #stars{ animation:introStarsIn 1.25s cubic-bezier(.2,.7,.2,1) both; }
+  html.intro-reveal .topbar{ animation:introBarIn .75s ease .12s both; }
+  html.intro-reveal .copy .intro-icon{ animation:introIconIn .95s cubic-bezier(.2,.7,.2,1) .3s both; }
+  html.intro-reveal .copy .intro-text{ animation:introTextIn 1s cubic-bezier(.2,.7,.2,1) .5s both; }
+  html.intro-reveal .copy .cta{ animation:introCtaIn .85s cubic-bezier(.2,.7,.2,1) .72s both; }
+  @media (prefers-reduced-motion: reduce){
+    html.intro-reveal #stars, html.intro-reveal .topbar,
+    html.intro-reveal .copy .intro-icon, html.intro-reveal .copy .intro-text,
+    html.intro-reveal .copy .cta{ animation:none; }
+  }
 </style>
 </head>
 <body>
@@ -458,7 +483,19 @@
   var docEl=document.documentElement;
   function isLocked(){ return docEl.classList.contains('gate-locked'); }
   function lock(){ docEl.classList.add('gate-locked'); try{window.scrollTo(0,0);}catch(e){} }
-  function unlock(){ docEl.classList.remove('gate-locked'); gate.classList.add('hide'); try{window.scrollTo(0,0);}catch(e){} }
+  function unlock(animate){
+    docEl.classList.remove('gate-locked');
+    try{window.scrollTo(0,0);}catch(e){}
+    var reduce=false; try{ reduce=matchMedia('(prefers-reduced-motion: reduce)').matches; }catch(e){}
+    if(animate && !reduce){
+      // soft focus-pull dissolve while the first screen assembles behind it
+      docEl.classList.add('intro-reveal');
+      gate.classList.add('leaving');
+      setTimeout(function(){ gate.classList.add('hide'); }, 900);
+    } else {
+      gate.classList.add('hide');
+    }
+  }
   async function sha256(s){
     var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
     return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
@@ -471,12 +508,12 @@
   // keep gate clicks from bubbling to the page's "click anywhere to jump down" handler
   gate.addEventListener('click', function(e){ e.stopPropagation(); });
   var unlocked=false; try{ unlocked=(sessionStorage.getItem(KEY)==='1'); }catch(e){}
-  if(unlocked){ unlock(); } else { lock(); }
+  if(unlocked){ unlock(false); } else { lock(); }
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var ok=false;
     try{ ok=(await sha256(input.value))===PASS_HASH; }catch(_){ ok=(input.value==='EOY-2026-TEST'); }
-    if(ok){ try{ sessionStorage.setItem(KEY,'1'); }catch(_){ } unlock(); }
+    if(ok){ try{ sessionStorage.setItem(KEY,'1'); }catch(_){ } unlock(true); }
     else { err.classList.add('show'); input.value=''; input.focus(); }
   });
 })();
