@@ -412,6 +412,9 @@
     text-align:center; padding:0 24px; gap:22px;
   }
   #gate.hide{display:none;}
+  #gate{touch-action:none; overscroll-behavior:none;}
+  /* freeze the page behind the gate so it can't be scrolled before unlocking */
+  html.gate-locked, html.gate-locked body{overflow:hidden !important; height:100%;}
   #gate .g-mark{width:64px; height:auto; opacity:.9;}
   #gate .g-kicker{font-family:var(--mono); font-size:11px; letter-spacing:.42em; text-transform:uppercase; opacity:.6;}
   #gate form{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center;}
@@ -452,12 +455,21 @@
   var form=document.getElementById('gateForm');
   var input=document.getElementById('gateInput');
   var err=document.getElementById('gateErr');
-  function unlock(){ gate.classList.add('hide'); }
+  var docEl=document.documentElement;
+  function isLocked(){ return docEl.classList.contains('gate-locked'); }
+  function lock(){ docEl.classList.add('gate-locked'); try{window.scrollTo(0,0);}catch(e){} }
+  function unlock(){ docEl.classList.remove('gate-locked'); gate.classList.add('hide'); try{window.scrollTo(0,0);}catch(e){} }
   async function sha256(s){
     var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
     return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
   }
-  try{ if(sessionStorage.getItem(KEY)==='1'){ unlock(); } }catch(e){}
+  // block every scroll route while the gate is up (wheel, touch, and scroll keys)
+  ['wheel','touchmove'].forEach(function(ev){ window.addEventListener(ev, function(e){ if(isLocked()) e.preventDefault(); }, {passive:false}); });
+  window.addEventListener('keydown', function(e){
+    if(isLocked() && [' ','Spacebar','ArrowDown','ArrowUp','PageDown','PageUp','Home','End'].indexOf(e.key)>=0){ e.preventDefault(); }
+  });
+  var unlocked=false; try{ unlocked=(sessionStorage.getItem(KEY)==='1'); }catch(e){}
+  if(unlocked){ unlock(); } else { lock(); }
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     var ok=false;
