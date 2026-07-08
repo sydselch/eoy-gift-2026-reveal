@@ -405,9 +405,68 @@
       --checkout-pad:15px 58px;
     }
   }
+  /* ---------- Soft password gate (shown before the intro) ---------- */
+  #gate{
+    position:fixed; inset:0; z-index:9999; background:#050507; color:var(--ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 24px; gap:22px;
+  }
+  #gate.hide{display:none;}
+  #gate .g-mark{width:64px; height:auto; opacity:.9;}
+  #gate .g-kicker{font-family:var(--mono); font-size:11px; letter-spacing:.42em; text-transform:uppercase; opacity:.6;}
+  #gate form{display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center;}
+  #gate input{
+    font-family:var(--mono); font-size:13px; letter-spacing:.12em; color:var(--ink);
+    background:transparent; border:1px solid rgba(255,255,255,.4); border-radius:999px;
+    padding:13px 22px; width:min(320px,72vw); text-align:center; outline:none;
+  }
+  #gate input:focus{border-color:var(--lime);}
+  #gate button{
+    font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase; cursor:pointer;
+    color:#111; background:var(--lime); border:1px solid var(--lime); border-radius:999px; padding:13px 26px;
+    transition:all .15s ease;
+  }
+  #gate button:hover{background:#fff; border-color:#fff;}
+  #gate .g-err{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:#ff8a3d; text-transform:uppercase; min-height:14px; opacity:0; transition:opacity .15s;}
+  #gate .g-err.show{opacity:1;}
 </style>
 </head>
 <body>
+
+<!-- Soft password gate: hides the page until the correct password is entered.
+     NOTE: this is client-side only — a deterrent, not real security. -->
+<div id="gate">
+  <img class="g-mark" src="eoy-assets/globe-icon.svg" alt="">
+  <div class="g-kicker">A Little Something</div>
+  <form id="gateForm" autocomplete="off">
+    <input id="gateInput" type="password" placeholder="Enter password" aria-label="Password" autofocus>
+    <button type="submit">Enter</button>
+  </form>
+  <div class="g-err" id="gateErr">Incorrect password</div>
+</div>
+<script>
+(function(){
+  var PASS_HASH='910e3ae1a51d868c9778c90a5f230af9ff7a349793048e63706517c8cf2d319b';
+  var KEY='eoy-gate-ok';
+  var gate=document.getElementById('gate');
+  var form=document.getElementById('gateForm');
+  var input=document.getElementById('gateInput');
+  var err=document.getElementById('gateErr');
+  function unlock(){ gate.classList.add('hide'); }
+  async function sha256(s){
+    var buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
+  try{ if(sessionStorage.getItem(KEY)==='1'){ unlock(); } }catch(e){}
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var ok=false;
+    try{ ok=(await sha256(input.value))===PASS_HASH; }catch(_){ ok=(input.value==='EOY-2026-TEST'); }
+    if(ok){ try{ sessionStorage.setItem(KEY,'1'); }catch(_){ } unlock(); }
+    else { err.classList.add('show'); input.value=''; input.focus(); }
+  });
+})();
+</script>
 
 <div id="stars"></div>
 
