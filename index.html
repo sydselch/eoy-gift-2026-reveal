@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Little Something — EOY Gift 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=Archivo:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#050507;
+    --ink:#f4f2ee;
+    --accent:#ff8a3d;      /* reveal / selection highlight */
+    --lime:#C5F910;        /* drag trail + basket glow + badge */
+    --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+    --serif:"Source Serif 4", Georgia, serif;
+    --display:"Archivo", system-ui, sans-serif;
+
+    /* ---- responsive spacing scale (base = tablet, 481–991px) ---- */
+    --psize:150px;                       /* product tile size */
+    --edge:24px;                         /* horizontal safe margin */
+    --topbar-pad:18px 22px;
+    --copy-top:72px;                     /* header block from top */
+    --intro-mw:500px;                    /* intro-text max width */
+    --cta-mw:380px;                      /* CTA max width (wraps to two lines) */
+    --sub-gap:26px;                      /* gap under the intro paragraph */
+    --big-fs:clamp(37px, 9.6vw, 96px);   /* giant headline size (spans most of the width) */
+    --hero-pad-top:96px;                 /* small top clearance... */
+    --hero-pad-bottom:200px;             /* ...larger bottom clears the basket, so the hero
+                                            centers between the top of the page and the basket */
+    --bar-bottom:40px;                   /* basket row from bottom */
+    --bar-gap:36px;                      /* gap between basket + checkout */
+    --basket-w:147px;
+    --checkout-pad:11px 40px;
+  }
+  *{box-sizing:border-box;}
+  html{height:100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--mono); overflow-x:hidden; position:relative;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* the visual scene is fixed-position layers; this spacer creates the scroll distance
+     over which section 1 (intro) transitions into section 2 (the gift scene) */
+  .scroll-spacer{height:360vh; width:1px; pointer-events:none;}
+
+  /* interaction is disabled until the scene has scrolled into view */
+  body:not(.scene-active) .product{pointer-events:none;}
+  body:not(.scene-active) .basket,
+  body:not(.scene-active) .checkout{pointer-events:none;}
+  /* section 1: a down-pointing "scroll" arrow acts as the cursor everywhere;
+     clicking anywhere jumps to the scene (handled in JS). Reverts to normal in the scene. */
+  body:not(.scene-active){
+    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%23C5F910' stroke-width='1.6'/%3E%3Cpath d='M20 11V27M13 20l7 8 7-8' fill='none' stroke='%23C5F910' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 20 20, pointer;
+  }
+
+  /* ---------- Particle field (abstract "pixel dust", not literal stars) ---------- */
+  #stars{position:fixed; inset:0; z-index:0; pointer-events:none;}
+  .star-layer{position:absolute; inset:0; will-change:transform;}   /* one per depth plane */
+  .star{position:absolute; background:#fff; border-radius:.5px;}     /* tiny squares = pixel dust */
+  .star.cream{background:#efe9dc;}                                   /* cream accent motes */
+  .star.lime{background:var(--lime);}                               /* occasional lime mote */
+  /* tiny shooting stars that streak by now and then */
+  .shooting-star{
+    position:absolute; top:0; left:0; width:2px; height:2px; border-radius:50%;
+    background:#fff; box-shadow:0 0 4px 1px rgba(255,255,255,.55);
+    opacity:0; will-change:transform, opacity;
+  }
+  .shooting-star::before{ /* faint trailing tail behind the head */
+    content:""; position:absolute; right:1px; top:50%; width:46px; height:1px;
+    transform:translateY(-50%);
+    background:linear-gradient(to left, rgba(255,255,255,.5), transparent);
+  }
+  #stars::after{ /* soft vignette */
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(0,0,0,.65) 100%);
+  }
+
+  /* ---------- Reduced motion: keep it calm — fade, don't fly ---------- */
+  @media (prefers-reduced-motion: reduce){
+    .product .art{animation:none !important;}
+    .trail-dot{display:none;}
+    .marquee .track{animation:none;}
+  }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    position:fixed; top:0; left:0; right:0; z-index:20;
+    display:grid; grid-template-columns:1fr auto 1fr; align-items:center;
+    padding:var(--topbar-pad); pointer-events:none;
+  }
+  .topbar svg{stroke:var(--ink);}
+  .logo-badge{
+    display:inline-flex; align-items:center; justify-content:center;
+  }
+  .topbar .center{
+    font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.42em;
+    text-align:center; color:var(--ink); opacity:.9;
+  }
+  .topbar .right{justify-self:end;}
+
+  /* ---------- Header copy ---------- */
+  .copy{
+    position:fixed; inset:0; z-index:15;                       /* full-height layer... */
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;                /* ...so the intro sits centered */
+    text-align:center; pointer-events:none; padding:0 var(--edge);
+    will-change:transform, opacity;                            /* parallax layer (intro) */
+  }
+  .copy .intro-icon{
+    position:absolute; top:22.4vh; left:50%; transform:translateX(-50%);
+    width:clamp(72px,7vw,96px); height:auto;
+  }
+  .copy .intro-text{
+    font-family:var(--serif); font-weight:400;
+    font-size:clamp(28px,3.1vw,40px); line-height:1.34;
+    max-width:var(--intro-mw); margin:0 auto; letter-spacing:.2px;
+    transform:translateY(3.7vh);      /* nudged down together with the globe icon */
+  }
+  /* CTA is its own idea — pinned near the bottom of section 1, away from the intro copy */
+  .copy .cta{
+    position:absolute; left:50%; bottom:7vh; transform:translateX(-50%);
+    width:max-content; max-width:min(var(--cta-mw), calc(100% - 2*var(--edge))); margin:0;
+    font-family:var(--mono); font-weight:500; font-size:11px; letter-spacing:.22em;
+    line-height:1.9; opacity:.8; text-transform:uppercase;
+  }
+
+  /* ---------- "Thank you" hero text (background poster layer) ---------- */
+  /* z-index:1 keeps it at the very back — just above the starfield and behind
+     the CTA copy, products, and basket, so it can never sit on top of the CTA. */
+  .thank-you-hero-text{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    will-change:transform, opacity;               /* parallax layer (background) */
+    display:flex; flex-direction:column; justify-content:center; align-items:center;
+    /* padded zone gives guaranteed breathing room above (clears CTA) and below (clears basket) */
+    padding:var(--hero-pad-top) var(--edge) var(--hero-pad-bottom);
+    text-align:center;
+    font-family:"Inter Tight", var(--display); font-weight:600;
+    /* sized by vw so the longest line spans most of the page, margins ~aligning with the topbar icons */
+    font-size:var(--big-fs); line-height:.9;
+    letter-spacing:-.025em; color:#fff; white-space:nowrap;
+  }
+  .thank-you-hero-text span{display:block; white-space:nowrap;}
+  /* small supporting line under the giant headline */
+  .thank-you-hero-text .hero-sub{
+    font-family:var(--mono); font-weight:500;
+    font-size:clamp(11px,1.15vw,14px); letter-spacing:.22em; text-transform:uppercase;
+    line-height:1.6; margin-top:1.1em; color:#fff; opacity:.82; white-space:normal;
+  }
+
+  /* ---------- Playfield / products ---------- */
+  #playfield{position:fixed; inset:0; z-index:5; pointer-events:none; will-change:transform, opacity;}
+  .product{
+    position:absolute; top:0; left:0;
+    /* per-product size multiplier (--pscale, set in JS) on top of the breakpoint tile size */
+    width:calc(var(--psize) * var(--pscale, 1)); height:calc(var(--psize) * var(--pscale, 1));
+    pointer-events:auto; cursor:grab; touch-action:none;
+    will-change:transform;
+  }
+  .product:active{cursor:grabbing;}
+  /* inner wrapper carries the hover lift so it never fights the position transform */
+  .product .art{
+    position:absolute; inset:0;
+    transition:filter .25s ease;
+    /* drift gently at all times, like floating in space (per-item duration/phase set in JS) */
+    animation:floaty var(--fdur,7s) ease-in-out infinite;
+    animation-delay:var(--fdelay,0s);
+  }
+  .product .art img{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:contain; display:block; -webkit-user-drag:none; user-select:none;
+  }
+  .product .art .blur{transition:opacity .25s ease;}
+  .product .art .sharp{opacity:0; transition:opacity .25s ease;}
+  .product.revealed .art .blur{opacity:0;}
+  .product.revealed .art .sharp{opacity:1;}
+  .product.revealed .art{filter:drop-shadow(0 8px 18px rgba(0,0,0,.55));}
+  /* de-pixelation canvas sits above both images while the 2s reveal plays */
+  .product .art canvas.px{
+    position:absolute; inset:0; width:100%; height:100%;
+    opacity:0; pointer-events:none; z-index:2; transition:opacity .25s ease;
+  }
+  .product.revealing .art canvas.px{opacity:1;}
+  .product.revealing .art{animation-play-state:paused;}   /* hold still while resolving */
+  /* mouse over: keep drifting, just lift subtly toward you */
+  .product.hovered .art{filter:drop-shadow(0 12px 26px rgba(0,0,0,.5));}
+  @keyframes floaty{
+    0%   {transform:translate(0,0)     rotate(0deg);}
+    25%  {transform:translate(7px,-11px) rotate(1deg);}
+    50%  {transform:translate(-5px,-5px) rotate(-1.2deg);}
+    75%  {transform:translate(-8px,7px)  rotate(.6deg);}
+    100% {transform:translate(0,0)     rotate(0deg);}
+  }
+  .product .tag{
+    position:absolute; left:calc(100% + 6px); top:50%;
+    /* --tag-nudge slides the label toward the product (for tiles with wide transparent margins) */
+    transform:translateY(-50%) translateX(calc(-1 * var(--tag-nudge,0px))); display:flex; align-items:center; gap:7px;
+    font-family:var(--mono); font-size:10px; letter-spacing:.14em; white-space:nowrap;
+    color:var(--lime); opacity:0; transition:opacity .12s ease; pointer-events:none;
+  }
+  /* name never shows before reveal; once revealed it appears only while hovering */
+  .product.revealed.hovered .tag{opacity:1;}
+  .product .tag .sq{width:9px; height:9px; background:var(--lime); border:1.5px solid var(--lime);}
+  .product.left-tag .tag{left:auto; right:calc(100% + 6px); flex-direction:row-reverse; transform:translateY(-50%) translateX(var(--tag-nudge,0px));}
+  /* while dragging, the product itself gets a soft lime glow (head of the comet) */
+  .product.dragging .art{filter:drop-shadow(0 0 16px rgba(var(--glow-rgb,197,249,16),.95)) drop-shadow(0 0 34px rgba(var(--glow-rgb,197,249,16),.45));}
+
+  /* ---------- Lime comet-trail behind a dragged product ---------- */
+  #trail{position:fixed; inset:0; z-index:4; pointer-events:none;}
+  .trail-dot{
+    position:absolute; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%;
+    background:radial-gradient(circle, rgba(var(--glow-rgb,197,249,16),.55) 0%, rgba(var(--glow-rgb,197,249,16),.28) 40%, rgba(var(--glow-rgb,197,249,16),0) 70%);
+    animation:trailfade .6s ease-out forwards;
+  }
+  @keyframes trailfade{
+    from{opacity:.85; transform:scale(1);}
+    to  {opacity:0;   transform:scale(.35);}
+  }
+
+  /* ---------- Basket + checkout row ---------- */
+  .bottombar{
+    position:fixed; left:50%; bottom:var(--bar-bottom); transform:translateX(-50%);
+    z-index:16; display:flex; align-items:center; gap:var(--bar-gap); pointer-events:none;
+    will-change:transform, opacity;               /* parallax layer (settles in with scene) */
+  }
+  .drag-note{
+    align-self:flex-end;
+    font-family:var(--mono); font-weight:500; font-size:10px; letter-spacing:.16em; line-height:1.7;
+    text-transform:uppercase; opacity:.75; text-align:right; display:flex; align-items:flex-end; gap:6px;
+    padding-bottom:16px;
+  }
+  .drag-note svg{stroke:var(--ink); opacity:.8;}
+  .basket{position:relative; pointer-events:auto; transition:transform .15s ease;}
+  .basket svg{stroke:var(--ink); fill:none; display:block;}
+  .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:filter .15s ease;}
+  .basket.hot{transform:scale(1.06);}
+  .basket.hot svg{stroke:var(--lime);}
+  .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(197,249,16,.5));}
+  .basket .badge{
+    position:absolute; top:-6px; left:-6px; min-width:24px; height:24px; padding:0 6px;
+    background:var(--lime); color:#111; border-radius:999px;
+    font-family:var(--mono); font-weight:700; font-size:12px;
+    display:none; align-items:center; justify-content:center;
+  }
+  .basket .badge.show{display:flex;}
+  .basket .remove{
+    position:absolute; top:-8px; right:-8px; width:26px; height:26px; padding:0;
+    background:#141416; color:var(--ink); border:1px solid rgba(255,255,255,.4);
+    border-radius:999px; cursor:pointer; pointer-events:auto;
+    font-family:var(--mono); font-size:15px; line-height:1;
+    display:none; align-items:center; justify-content:center; transition:all .15s ease;
+  }
+  .basket .remove.show{display:flex;}
+  .basket .remove:hover{border-color:var(--accent); color:var(--accent);}
+  .checkout{
+    pointer-events:auto; cursor:pointer; background:transparent; color:var(--ink);
+    border:1px solid rgba(255,255,255,.55); border-radius:999px;
+    font-family:var(--mono); font-size:12px; letter-spacing:.22em; text-transform:uppercase;
+    padding:var(--checkout-pad); transition:all .15s ease;
+  }
+  .checkout:hover{background:#fff; border-color:#fff; color:#111;}
+  /* basket row stays dimmed until the first gift is brought into focus */
+  .bottombar .basket,
+  .bottombar .checkout,
+  .bottombar .drag-note{ opacity:.3; transition:opacity .45s ease; }
+  body.has-reveal .bottombar .basket,
+  body.has-reveal .bottombar .checkout{ opacity:1; }
+  body.has-reveal .bottombar .drag-note{ opacity:.75; }
+
+  /* ---------- Bottom marquee ---------- */
+  .marquee{
+    position:fixed; left:0; right:0; bottom:0; z-index:14; overflow:hidden;
+    border-top:1px solid rgba(0,0,0,.12); background:#F9F3E5;
+    padding:9px 0; pointer-events:none;
+  }
+  .marquee .track{
+    display:inline-flex; white-space:nowrap; animation:scroll 52s linear infinite;
+    font-family:var(--mono); font-size:11px; letter-spacing:.28em; opacity:.7; color:#1a1a1a;
+  }
+  .marquee .track span{padding:0 26px;}
+  @keyframes scroll{from{transform:translateX(0);} to{transform:translateX(-50%);}}
+
+  /* ---------- Product modal ---------- */
+  .overlay{
+    position:fixed; inset:0; z-index:100; background:rgba(3,3,5,.66);
+    display:none; align-items:center; justify-content:center; padding:24px; backdrop-filter:blur(2px);
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    width:min(1080px,95vw); background:#fff; color:#1a1a1a; border-radius:2px;
+    padding:34px 40px 40px; position:relative;
+    font-family:var(--mono); animation:pop .18s ease;
+  }
+  @keyframes pop{from{opacity:0; transform:translateY(8px) scale(.98);} to{opacity:1; transform:none;}}
+  /* header: "A little something from / BRAND" on the left, boxed close on the right */
+  .modal .m-head{display:flex; align-items:flex-start; justify-content:space-between; gap:20px;}
+  .modal .m-kicker{font-family:var(--mono); font-weight:500; font-size:13px; letter-spacing:.28em; text-transform:uppercase;}
+  .modal .m-brand{font-family:var(--display); font-weight:900; font-size:clamp(20px,2vw,26px); line-height:1; letter-spacing:.005em; text-transform:uppercase; margin-top:10px;}
+  .modal .close{
+    flex:none; width:52px; height:52px; background:none; cursor:pointer;
+    border:1.5px solid #1a1a1a; border-radius:999px; color:#1a1a1a;
+    font-size:24px; line-height:1; display:flex; align-items:center; justify-content:center;
+    transition:background .15s, color .15s;
+  }
+  .modal .close:hover{background:#1a1a1a; color:#fff;}
+  .modal .m-divider{border-top:1.5px solid #1a1a1a; margin:22px 0 28px;}
+  /* body: hero | vertical thumbnails | content */
+  .modal .m-body{display:grid; grid-template-columns:minmax(0,1.05fr) 96px minmax(0,1fr); gap:26px; align-items:stretch;}
+  .modal .m-content{display:flex; flex-direction:column;}
+  .modal .m-hero{background:#fff; border-radius:2px; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center;}
+  .modal .m-hero img{width:82%; height:82%; object-fit:contain;}
+  .modal .m-thumbs{display:flex; flex-direction:column; gap:12px;}
+  .modal .m-thumbs .th{width:96px; height:96px; background:#fff; border:1.5px solid transparent; border-radius:2px; padding:9px; cursor:pointer; transition:border-color .15s;}
+  .modal .m-thumbs .th img{width:100%; height:100%; object-fit:contain;}
+  .modal .m-thumbs .th.selected{border-color:#1a1a1a;}
+  .modal .m-title{font-family:var(--display); font-weight:900; font-size:clamp(26px,2.8vw,36px); letter-spacing:.005em; text-transform:uppercase; margin:2px 0 22px; line-height:1.02;}
+  .modal .m-desc{font-size:13px; line-height:1.95; letter-spacing:.05em; color:#2a2822; text-transform:uppercase;}
+  .modal .m-swatches{display:flex; gap:14px; margin:28px 0 0;}
+  .modal .m-swatches .sw{width:34px; height:34px; border-radius:50%; border:1px solid #b9b5aa; cursor:pointer;}
+  .modal .m-swatches .sw.active{outline:2px solid #1a1a1a; outline-offset:2px;}
+  .modal .m-add{
+    width:100%; margin-top:auto; background:none; color:#1a1a1a; border:1.5px solid #1a1a1a; cursor:pointer;
+    font-family:var(--display); font-weight:800; font-size:20px; letter-spacing:.06em; text-transform:uppercase;
+    padding:20px; border-radius:999px; transition:background .15s, color .15s;
+  }
+  .modal .m-add:hover{background:#1a1a1a; color:#fff;}
+
+  /* ---------- Toast ---------- */
+  .toast{
+    position:fixed; left:50%; bottom:150px; transform:translateX(-50%) translateY(12px);
+    z-index:200; background:#141416; border:1px solid rgba(255,255,255,.18);
+    color:var(--ink); font-family:var(--mono); font-size:11px; letter-spacing:.08em;
+    padding:12px 18px; border-radius:3px; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; max-width:80vw; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .toast b{color:var(--accent);}
+
+  /* ============================================================
+     RESPONSIVE BREAKPOINTS
+     mobile ≤480  ·  (base 481–991)  ·  desktop ≥992  ·  monitor ≥1200
+     All layout knobs are the --vars above; each stop just re-scales
+     them so the airy spacing of the small view is kept at every size.
+     ============================================================ */
+
+  /* --- Mobile: compact everything, stack the modal, drop drag hint --- */
+  @media (max-width:480px){
+    :root{
+      --psize:104px;
+      --edge:16px;
+      --topbar-pad:14px 16px;
+      --copy-top:60px;
+      --sub-gap:18px;
+      --big-fs:clamp(26px, 9.6vw, 50px);
+      --hero-pad-top:72px;
+      --hero-pad-bottom:150px;
+      --bar-bottom:26px;
+      --bar-gap:14px;
+      --basket-w:104px;
+      --checkout-pad:7px 24px;
+    }
+    .copy .intro-text{font-size:23px; line-height:1.3;}
+    .copy .cta{font-size:10px;}
+    .modal{grid-template-columns:1fr;}
+    .drag-note{display:none;}
+  }
+
+  /* --- Desktop: open up the margins and grow the scene --- */
+  @media (min-width:992px){
+    :root{
+      --psize:172px;
+      --edge:104px;                        /* wider left/right margin for all text */
+      --topbar-pad:22px 64px;
+      --copy-top:92px;
+      --intro-mw:600px;                    /* wider intro copy on desktop */
+      --cta-mw:380px;
+      --sub-gap:34px;
+      --big-fs:clamp(74px, 10vw, 125px);     /* longest line lands ~50px from the topbar icons */
+      --hero-pad-top:110px;
+      --hero-pad-bottom:240px;             /* clears the (fixed) basket at desktop */
+      --bar-bottom:52px;
+      --bar-gap:52px;
+      --basket-w:168px;
+      --checkout-pad:13px 50px;
+    }
+  }
+
+  /* --- Monitor: largest, most generous padding of all --- */
+  @media (min-width:1200px){
+    :root{
+      --psize:190px;
+      --edge:150px;                        /* widest left/right margin for all text */
+      --topbar-pad:26px 92px;
+      --copy-top:106px;
+      --intro-mw:760px;                    /* widest intro copy on large monitors */
+      --cta-mw:400px;
+      --sub-gap:40px;
+      --big-fs:clamp(96px, 9.6vw, 176px);    /* longest line lands ~icon margins on wide monitors */
+      --hero-pad-top:130px;
+      --hero-pad-bottom:260px;             /* clears the (fixed) basket at monitor size */
+      --bar-bottom:60px;
+      --bar-gap:64px;
+      --basket-w:189px;
+      --checkout-pad:15px 58px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<div class="thank-you-hero-text"><span>Thanks for</span><span>a stellar year</span><span>of shipping</span></div>
+
+<div class="topbar">
+  <div class="left">
+    <!-- Shopify bag in white rounded tile -->
+    <span class="logo-badge">
+      <img src="eoy-assets/shopify-bag-logo.svg" alt="Shopify" width="39" height="39">
+    </span>
+  </div>
+  <div class="center">A LITTLE SOMETHING</div>
+  <div class="right">
+    <!-- Gift -->
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.6">
+      <rect x="3.5" y="9" width="17" height="11.5" rx="1"/>
+      <path d="M2.5 9h19V6.5h-19z"/>
+      <path d="M12 6.5v14"/>
+      <path d="M12 6.5C11 3 7.5 3.5 8 6c.3 1.5 4 .5 4 .5Z"/>
+      <path d="M12 6.5C13 3 16.5 3.5 16 6c-.3 1.5-4 .5-4 .5Z"/>
+    </svg>
+  </div>
+</div>
+
+<div class="copy">
+  <img class="intro-icon" src="eoy-assets/globe-icon.svg" alt="" width="96" height="96">
+  <p class="intro-text">You shipped the work that kept commerce moving. So we put a few merchant-made gifts in orbit for you.</p>
+  <p class="cta">Bring them into focus, choose your favourite, and we&rsquo;ll send it your way.</p>
+</div>
+
+<div id="trail"></div>
+<div id="playfield"></div>
+
+<div class="bottombar">
+  <div class="drag-note">
+    Drag your<br>selection here
+    <svg width="46" height="34" viewBox="0 0 46 34" fill="none" stroke-width="1.4" style="transform:scaleY(-1)">
+      <path d="M2 4 C 18 2, 34 8, 40 26" stroke-linecap="round"/>
+      <path d="M34 22 L41 28 L44 20" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <div class="basket" id="basket">
+    <img id="basketImg" src="eoy-assets/shopping-basket-transparent-png-image.png" alt="Shopping basket"
+         onerror="this.style.display='none';document.getElementById('basketFallback').style.display='block';">
+    <svg id="basketFallback" width="118" height="92" viewBox="0 0 118 92" stroke-width="1.6" style="display:none">
+      <path d="M39 26 a20 14 0 0 1 40 0" stroke-linecap="round"/>
+      <path d="M14 30 H104"/>
+      <path d="M22 30 L31 84 H87 L96 30"/>
+      <path d="M40 34 L44 80 M59 34 L59 80 M78 34 L74 80"/>
+    </svg>
+    <div class="badge" id="badge">0</div>
+    <button class="remove" id="removeBtn" aria-label="Remove from basket">&times;</button>
+  </div>
+
+  <button class="checkout" id="checkout">Send it</button>
+</div>
+
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="m-head">
+      <div class="m-from">
+        <div class="m-kicker">A little something from</div>
+        <div class="m-brand" id="mBrand">BRAND</div>
+      </div>
+      <button class="close" id="mClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="m-divider"></div>
+    <div class="m-body">
+      <div class="m-hero"><img id="mHeroImg" alt=""></div>
+      <div class="m-thumbs" id="mThumbs"></div>
+      <div class="m-content">
+        <div class="m-title" id="mTitle">PRODUCT</div>
+        <div class="m-desc" id="mDesc"></div>
+        <div class="m-swatches" id="mSwatches"></div>
+        <button class="m-add" id="mAdd">Add to basket</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- creates the scroll distance for the intro → scene parallax transition -->
+<div class="scroll-spacer"></div>
+
+<script>
+/* =========================================================
+   A LITTLE SOMETHING — reveal + drag-to-basket prototype
+   Product art = real merchant images in eoy-assets/ (name.png + name-blur.png).
+   Blurred by default; first click reveals, second click opens details, drag to basket.
+   ========================================================= */
+
+/* ---- Particle field: 3 depth planes that parallax at different speeds ---- */
+var starLayers=[];
+(function(){
+  var s=document.getElementById('stars');
+  // far -> near: fewer/dimmer/slower in back, sparser/brighter/faster in front
+  var planes=[
+    {n:170, size:1,   opBase:.18, opVar:.22, factor:0.05},  // far dust
+    {n:115, size:1.5, opBase:.30, opVar:.35, factor:0.14},  // mid
+    {n:56,  size:2.2, opBase:.55, opVar:.40, factor:0.30}   // near motes
+  ];
+  var gi=0;
+  planes.forEach(function(pl, li){
+    var layer=document.createElement('div'); layer.className='star-layer';
+    var html='';
+    for(var i=0;i<pl.n;i++){
+      gi++;
+      var x=(gi*97.31)%100, y=(gi*57.79)%100;               // deterministic scatter
+      var op=(pl.opBase+((gi*13)%Math.round(pl.opVar*100))/100).toFixed(2);
+      var tint = (gi%23===0)?' lime' : (gi%7===0?' cream':'');   // mostly white, a few cream, rare lime
+      html+='<span class="star'+tint+'" style="left:'+x+'%;top:'+y+'%;width:'+pl.size+'px;height:'+pl.size+'px;opacity:'+op+'"></span>';
+    }
+    layer.innerHTML=html;
+    s.insertBefore(layer, s.firstChild);
+    starLayers.push({el:layer, factor:pl.factor});
+  });
+})();
+
+/* ---- Subtle shooting stars ---- */
+(function(){
+  var host=document.getElementById('stars');
+  var calm=(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  if(!host || calm) return;
+  function shoot(){
+    if(document.hidden) return;                          // don't pile up while tab is hidden
+    var W=innerWidth||1, H=innerHeight||1;
+    var star=document.createElement('div'); star.className='shooting-star';
+    var sx=Math.random()*W*0.9, sy=Math.random()*H*0.45; // start in the upper region
+    var dir=Math.random()<0.5?1:-1;                      // streak left or right
+    var ang=(15+Math.random()*30)*Math.PI/180;           // 15–45° below horizontal
+    var dist=220+Math.random()*220;
+    var dx=Math.cos(ang)*dist*dir, dy=Math.sin(ang)*dist;
+    var deg=Math.atan2(dy,dx)*180/Math.PI;               // rotate so the tail trails behind
+    var from='translate('+sx+'px,'+sy+'px) rotate('+deg+'deg)';
+    var to='translate('+(sx+dx)+'px,'+(sy+dy)+'px) rotate('+deg+'deg)';
+    star.style.transform=from;
+    host.appendChild(star);
+    var a=star.animate(
+      [ {transform:from, opacity:0},
+        {opacity:.7, offset:.18},
+        {opacity:.7, offset:.7},
+        {transform:to, opacity:0} ],
+      {duration:700+Math.random()*600, easing:'ease-out'}
+    );
+    a.onfinish=function(){ star.remove(); };
+  }
+  function loop(){ shoot(); setTimeout(loop, 1200+Math.random()*2200); }  // one every ~1.2–3.4s
+  setTimeout(loop, 900);
+})();
+
+/* ---- Product data (real merchant images: name.png + name-blur.png) ---- */
+var ASSET='eoy-assets/';
+var PRODUCTS=[
+  {id:'blender', name:'Beast Mighty 850 Blender', merchant:'Beast', img:'cutout/blender-cutout.png', blur:'cutout/blender-cutout-blur.png', xp:.82, yp:.28,
+   colors:['#e7dfce','#1a1a1a'],
+   desc:'Small footprint, mighty blends. The Mighty 850 is a compact personal blender supercharged with 850 watts of power. Your kitchen swiss-army knife: smoothies, dressings, dips, desserts and more.'},
+  {id:'chess', name:'Printworks Chess Set', merchant:'Printworks', img:'cutout/chess-board-cutout.png', blur:'cutout/chess-board-cutout-blur.png', xp:.10, yp:.72,
+   colors:['#d8c9a3','#5a4632'],
+   desc:'A minimalist take on the classic. Solid-wood pieces and a travel-ready board that folds flat. Beautifully weighted, endlessly playable, made to sit out on the table.'},
+  {id:'monitor', name:'Arzopa Portable Monitor', merchant:'Arzopa', img:'cutout/monitor-cutout.png', blur:'cutout/monitor-cutout-blur.png', xp:.07, yp:.05,
+   colors:['#2b2b2f','#c9ccd1'],
+   desc:'A slim portable second screen for working anywhere. Plug-and-play over USB-C with a laminated panel and a folding stand built in — double your desk in seconds.'},
+  {id:'walkingpad', name:'Kingsmith Walking Pad', merchant:'Kingsmith', img:'cutout/walking-pad-cutout.png', blur:'cutout/walking-pad-cutout-blur.png', xp:.70, yp:.68,
+   colors:['#1a1a1a','#c9ccd1'],
+   desc:'Move while you work. A slim under-desk walking pad that tucks away flat, with a whisper-quiet motor and a simple remote. Steps in, stress out.'},
+  {id:'mat', name:'The Stakt Mat Pro', merchant:'Stakt', img:'cutout/mat-cutout.png', blur:'cutout/mat-cutout-blur.png', xp:.42, yp:.42,
+   colors:['#3b3832','#8a8172'],
+   desc:'A cushioned, non-slip mat that goes wherever you do — stretch, flow, or just stand in comfort. Sweat-proof, easy to wipe down, and rolls up tight.'},
+  {id:'fanny', name:'Rains Fanny Pack', merchant:'Rains', img:'cutout/fanny-cutout.png', blur:'cutout/fanny-cutout-blur.png', xp:.30, yp:.16,
+   colors:['#2f3330','#d8d4cc'],
+   desc:'A clean, waterproof crossbody from Rains. Wear it at the hip or across the chest — a single roomy compartment with a matte, weatherproof finish that shrugs off a downpour.'}
+];
+
+// read a px-valued CSS custom property (kept in sync with the breakpoints)
+function cssPx(name, fallback){
+  var v=parseInt(getComputedStyle(document.documentElement).getPropertyValue(name),10);
+  return isNaN(v)?fallback:v;
+}
+var PSIZE=cssPx('--psize',150);          // product tile size for the current breakpoint
+var playfield=document.getElementById('playfield');
+var basketEl=document.getElementById('basket');
+var badgeEl=document.getElementById('badge');
+var removeEl=document.getElementById('removeBtn');
+var basketCount=0;
+
+/* ---- Lime comet trail: drop a fading glow dot along the drag path ---- */
+var trailLayer=document.getElementById('trail');
+var _tlx=0,_tly=0,_tlHas=false;
+function spawnTrail(x,y){
+  if(_tlHas){ var ddx=x-_tlx, ddy=y-_tly; if(ddx*ddx+ddy*ddy<90) return; }  // ~9px min spacing
+  _tlx=x; _tly=y; _tlHas=true;
+  var d=document.createElement('div'); d.className='trail-dot';
+  d.style.left=x+'px'; d.style.top=y+'px';
+  trailLayer.appendChild(d);
+  d.addEventListener('animationend', function(){ if(d.parentNode) d.parentNode.removeChild(d); });
+}
+
+/* ---- Per-product glow colour, pulled from each image ----
+   We sample the artwork and take a saturation-weighted average so the glow reflects
+   the product's most vivid colours (not muddy background greys). If the canvas can't be
+   read (e.g. a tainted file:// image in some browsers), we fall back to the product's
+   most vivid curated swatch — so every product still gets its own distinct glow. */
+function hexToRgb(h){ h=(h||'').replace('#',''); if(h.length===3) h=h.replace(/./g,'$&$&'); var n=parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+function saturation(r,g,b){ var mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; }
+function boostGlow(r,g,b){ var mx=Math.max(r,g,b,1); var f=Math.min(255/mx, 235/mx + 0.35); r*=f; g*=f; b*=f; return [Math.min(255,Math.round(r)),Math.min(255,Math.round(g)),Math.min(255,Math.round(b))]; }
+function vividFromSwatches(colors){                    // fallback: pick the most saturated curated swatch
+  var best=[197,249,16], bestSat=-1;
+  (colors||[]).forEach(function(c){ var rgb=hexToRgb(c); var s=saturation(rgb[0],rgb[1],rgb[2]); if(s>bestSat){ bestSat=s; best=rgb; } });
+  return boostGlow(best[0],best[1],best[2]).join(',');
+}
+function sampleGlow(img, cb){                           // saturation-weighted dominant colour of the artwork
+  try{
+    var s=32, c=document.createElement('canvas'); c.width=s; c.height=s;
+    var ctx=c.getContext('2d'); ctx.drawImage(img,0,0,s,s);
+    var d=ctx.getImageData(0,0,s,s).data, rw=0,gw=0,bw=0,wsum=0;
+    for(var i=0;i<d.length;i+=4){
+      var a=d[i+3]; if(a<48) continue;                 // ignore transparent cutout background
+      var r=d[i],g=d[i+1],b=d[i+2], sat=saturation(r,g,b);
+      var w=sat*sat*(a/255);                            // weight vivid pixels heavily, ignore greys
+      rw+=r*w; gw+=g*w; bw+=b*w; wsum+=w;
+    }
+    if(wsum<0.02) return;                               // artwork is basically greyscale — keep fallback
+    var out=boostGlow(rw/wsum, gw/wsum, bw/wsum);
+    cb(out.join(','));
+  }catch(e){ /* tainted canvas — keep the swatch fallback */ }
+}
+
+/* ---- Build products ---- */
+var items=[];
+function bounds(){
+  var W=innerWidth, H=innerHeight;
+  var edge=cssPx('--edge',24);
+  // wide band from just under the topbar down to (but clear of) the basket, so the
+  // products scatter across most of the page and cover a lot of the hero text
+  var t=Math.round(H*0.13);
+  var b=Math.round(Math.min(H*0.66, H-PSIZE-Math.max(edge, cssPx('--bar-bottom',40)+70)));
+  var l=Math.round(Math.max(edge, W*0.04));
+  var r=Math.round(Math.min(W*0.88, W-PSIZE-edge));
+  if(r<l) r=l;
+  if(b<t) b=t;
+  return {t:t, b:b, l:l, r:r};
+}
+PRODUCTS.forEach(function(p,i){
+  var el=document.createElement('div');
+  el.className='product';
+  // base tiles run 1.2×; monitor stays 1×; fanny + walking pad get a further 20% bump (1.44×)
+  var scale = p.id==='monitor' ? 1 : ((p.id==='fanny'||p.id==='walkingpad') ? 1.44 : 1.2);
+  el.style.setProperty('--pscale', scale);
+  var art=document.createElement('div'); art.className='art';
+  var blur=document.createElement('img'); blur.className='blur'; blur.src=ASSET+p.blur; blur.alt='';
+  var sharp=document.createElement('img'); sharp.className='sharp'; sharp.src=ASSET+p.img; sharp.alt=p.name;
+  art.appendChild(blur); art.appendChild(sharp);
+  // glow colour pulled from this product's image (fallback = its most vivid swatch)
+  el.style.setProperty('--glow-rgb', vividFromSwatches(p.colors));
+  function setGlow(rgb){ el.style.setProperty('--glow-rgb', rgb); if(it) it.glow=rgb; }
+  if(sharp.complete && sharp.naturalWidth){ sampleGlow(sharp, setGlow); }
+  else { sharp.addEventListener('load', function(){ sampleGlow(sharp, setGlow); }); }
+  var px=document.createElement('canvas'); px.className='px';
+  art.appendChild(px);
+  var tag=document.createElement('div'); tag.className='tag';
+  tag.innerHTML='<span class="sq"></span>'+p.name;
+  el.appendChild(art); el.appendChild(tag);
+  playfield.appendChild(el);
+
+  var b=bounds();
+  var it={
+    data:p, el:el, sharpImg:sharp, canvas:px,
+    x:b.l+(b.r-b.l)*p.xp, y:b.t+(b.b-b.t)*p.yp,
+    revealed:false, revealing:false, hovered:false, dragging:false, inBasket:false,
+    downX:0, downY:0, moved:false
+  };
+  it.glow=el.style.getPropertyValue('--glow-rgb').trim();   // current per-product glow (may upgrade after image sampling)
+  it.homeX=it.x; it.homeY=it.y;                 // original scatter spot to return to
+  el.style.transform='translate('+it.x+'px,'+it.y+'px)';
+  // vary float speed/phase per product so they don't drift in lockstep
+  el.style.setProperty('--fdur', (6.4 + i*0.8) + 's');
+  el.style.setProperty('--fdelay', (-i*1.7) + 's');
+  if(p.xp>0.6) el.classList.add('left-tag'); // flip tag near right edge
+  if(p.id==='blender') el.style.setProperty('--tag-nudge','80px'); // blender art has a wide transparent margin — pull its label closer
+  items.push(it);
+  wire(it);
+});
+
+/* ---- Interaction wiring ---- */
+function wire(it){
+  var el=it.el;
+  el.addEventListener('pointerenter', function(){
+    it.over=true;
+    it.hovered=true; el.classList.add('hovered');   // hover = subtle animation only
+  });
+  el.addEventListener('pointerleave', function(){
+    it.over=false;
+    if(it.dragging) return;
+    it.hovered=false; el.classList.remove('hovered');
+  });
+  el.addEventListener('pointerdown', function(e){
+    el.setPointerCapture(e.pointerId);
+    it.moved=false;
+    it.downX=e.clientX; it.downY=e.clientY;
+    it._ox=it.x; it._oy=it.y;
+    it.el.style.zIndex=50;
+    it.el.style.transition='none';        // drag follows the pointer instantly (clear any bounce/return tween)
+  });
+  el.addEventListener('pointermove', function(e){
+    if(!el.hasPointerCapture||!el.hasPointerCapture(e.pointerId)) return;
+    var dx=e.clientX-it.downX, dy=e.clientY-it.downY;
+    if(Math.abs(dx)>4||Math.abs(dy)>4){ it.moved=true; it.dragging=true; el.classList.add('dragging'); trailLayer.style.setProperty('--glow-rgb', it.glow||'197,249,16'); }
+    if(it.dragging){
+      it.x=it._ox+dx; it.y=it._oy+dy;
+      el.style.transform='translate('+it.x+'px,'+it.y+'px)';
+      spawnTrail(e.clientX, e.clientY);                 // lime comet trail behind the product
+      // basket hover highlight (only for a revealed gift)
+      basketEl.classList.toggle('hot', it.revealed && overBasket(it));
+    }
+  });
+  el.addEventListener('pointerup', function(e){
+    el.releasePointerCapture(e.pointerId);
+    it.el.style.zIndex='';
+    if(!it.moved){
+      // click: 1st click de-pixelates over 2s (reveal), later clicks open details
+      if(it.revealing){ /* mid-reveal — ignore */ }
+      else if(!it.revealed){ startReveal(it); }
+      else { openModal(it); }
+    }else if(overBasket(it)){
+      // dropped on the basket: place it if revealed, otherwise spring it back out
+      if(it.revealed){ addToBasket(it); }
+      else { bounceHome(it); toast('Bring it into focus first, then drop it in'); }
+    }
+    it.dragging=false;
+    el.classList.remove('dragging');
+    _tlHas=false;                                       // reset trail spacing for next drag
+    basketEl.classList.remove('hot');
+  });
+}
+
+/* ---- 2-second de-pixelation reveal ---- */
+function startReveal(it){
+  var img=it.sharpImg;
+  if(!(img.complete && img.naturalWidth)){          // wait for the sharp image to decode
+    img.addEventListener('load', function(){ startReveal(it); }, {once:true});
+    return;
+  }
+  it.revealing=true;
+  it.hovered=false; it.el.classList.remove('hovered');
+  it.el.classList.add('revealing');
+
+  var canvas=it.canvas, ctx=canvas.getContext('2d');
+  var scratch=document.createElement('canvas'), sctx=scratch.getContext('2d');
+  var dpr=Math.min(window.devicePixelRatio||1, 2);
+  var box=it.el.getBoundingClientRect();
+  var W=Math.max(1,Math.round(box.width)), H=Math.max(1,Math.round(box.height));
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  // replicate object-fit:contain so the pixel grid lines up with the image
+  var iw=img.naturalWidth, ih=img.naturalHeight;
+  var r=Math.min((W*dpr)/iw,(H*dpr)/ih);
+  var dw=iw*r, dh=ih*r, dx=(W*dpr-dw)/2, dy=(H*dpr-dh)/2;
+
+  var DUR=250, MAXBLOCK=26*dpr, start=null;
+  function frame(ts){
+    if(start===null) start=ts;
+    var t=Math.min(1,(ts-start)/DUR);
+    var e=t*t*(3-2*t);                               // smoothstep easing
+    var block=Math.max(1, MAXBLOCK*(1-e));           // big blocks -> 1px over 2s
+    var sw=Math.max(1,Math.round(dw/block)), sh=Math.max(1,Math.round(dh/block));
+    scratch.width=sw; scratch.height=sh;
+    sctx.imageSmoothingEnabled=true;                 // average colours into each block
+    sctx.clearRect(0,0,sw,sh);
+    sctx.drawImage(img,0,0,sw,sh);
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.imageSmoothingEnabled=false;                 // upscale hard-edged -> chunky pixels
+    ctx.drawImage(scratch,0,0,sw,sh,dx,dy,dw,dh);
+    if(t<1){ requestAnimationFrame(frame); }
+    else {                                           // hand off to the crisp image
+      it.revealing=false; it.revealed=true;
+      it.el.classList.remove('revealing');
+      it.el.classList.add('revealed');               // shows sharp img + product name
+      document.body.classList.add('has-reveal');     // un-dim the basket row now a gift is in focus
+      if(it.over){                                   // pointer is still on it after the click —
+        it.hovered=true; it.el.classList.add('hovered'); // show the name right away
+      }
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// true when the product's body overlaps the basket area at all (not just its centre),
+// so nothing can be parked half-behind the basket without being placed or bounced
+function overBasket(it){
+  var b=basketEl.getBoundingClientRect();
+  var sz=it.el.offsetWidth||PSIZE, m=8;
+  return (it.x+sz)>(b.left-m) && it.x<(b.right+m) && (it.y+sz)>(b.top-m) && it.y<(b.bottom+m);
+}
+// can't rest on/behind the basket — spring back to its scatter spot
+function bounceHome(it){
+  it.x=it.homeX; it.y=it.homeY;
+  it.el.style.transition='transform .45s cubic-bezier(.34,1.56,.64,1)';
+  it.el.style.transform='translate('+it.x+'px,'+it.y+'px)';
+  setTimeout(function(){ if(!it.dragging) it.el.style.transition='none'; }, 470);
+}
+
+/* ---- Basket (holds exactly one gift) ---- */
+var currentItem=null;
+
+function returnToPage(it){
+  it.inBasket=false;
+  it.x=it.homeX; it.y=it.homeY;          // back to its original spot on the lettering
+  it.el.style.display='';
+  it.el.style.zIndex='';                 // drop back to the playfield layer
+  it.el.style.pointerEvents='';          // interactive again
+  it.el.style.transition='none';         // start from current (basket) position...
+  requestAnimationFrame(function(){      // ...then animate out to home
+    it.el.style.transition='transform .5s cubic-bezier(.34,1.56,.64,1), opacity .4s';
+    it.el.style.opacity='1';
+    it.el.style.transform='translate('+it.x+'px,'+it.y+'px) scale(1)';
+  });
+}
+
+function addToBasket(it){
+  if(it.inBasket) return;                 // already the chosen gift
+  var replaced=null;
+  if(currentItem && currentItem!==it){    // only one gift allowed — swap out the old
+    replaced=currentItem;
+    returnToPage(replaced);
+  }
+  currentItem=it;
+  it.inBasket=true; it.hovered=false; it.el.classList.remove('hovered','dragging');
+  it.el.style.display='';
+  var b=basketEl.getBoundingClientRect();
+  var sz=it.el.offsetWidth||PSIZE;                  // footprint for accurate centering
+  var cx=b.left+b.width/2, cy=b.top+b.height*0.40;  // nestle near the basket opening
+  it.el.style.zIndex='17';                          // sit in front of the basket art
+  it.el.style.pointerEvents='none';                 // static once nestled — no drag/click from the basket
+  it.el.style.transition='transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s';
+  it.el.style.transform='translate('+(cx-sz/2)+'px,'+(cy-sz/2)+'px) scale(1)';  // keep full size in the basket
+  it.el.style.opacity='1';                          // stays visible, resting in the basket
+  basketCount=1;
+  badgeEl.textContent='1'; badgeEl.classList.add('show');
+  removeEl.classList.add('show');                   // X to remove appears once a gift is in
+  basketEl.classList.add('hot'); setTimeout(function(){basketEl.classList.remove('hot');},400);
+  if(replaced) toast('Swapped in <b>'+it.data.name+'</b> &mdash; only one gift per person');
+  else toast('Added <b>'+it.data.name+'</b> to your basket');
+}
+
+/* ---- Modal ---- */
+var overlay=document.getElementById('overlay');
+var mHeroImg=document.getElementById('mHeroImg');
+var mTitle=document.getElementById('mTitle'), mDesc=document.getElementById('mDesc');
+var mSw=document.getElementById('mSwatches'), mAdd=document.getElementById('mAdd');
+var mBrand=document.getElementById('mBrand'), mThumbs=document.getElementById('mThumbs');
+var activeItem=null;
+
+function openModal(it){
+  activeItem=it;
+  mBrand.textContent=it.data.merchant;
+  mTitle.textContent=it.data.name;
+  mDesc.textContent=it.data.desc;
+  mHeroImg.src=ASSET+it.data.img;
+  // vertical thumbnail strip — reuse the sharp cutout; first is the selected view
+  mThumbs.innerHTML='';
+  for(var ti=0; ti<4; ti++){
+    var th=document.createElement('div'); th.className='th'+(ti===0?' selected':'');
+    var im=document.createElement('img'); im.src=ASSET+it.data.img; im.alt='';
+    th.appendChild(im);
+    (function(node){ node.onclick=function(){ mThumbs.querySelectorAll('.th').forEach(function(x){x.classList.remove('selected');}); node.classList.add('selected'); }; })(th);
+    mThumbs.appendChild(th);
+  }
+  mSw.innerHTML='';
+  it.data.colors.forEach(function(c,idx){
+    var s=document.createElement('div'); s.className='sw'+(idx===0?' active':'');
+    s.style.background=c;
+    s.onclick=function(){ mSw.querySelectorAll('.sw').forEach(function(x){x.classList.remove('active');}); s.classList.add('active'); };
+    mSw.appendChild(s);
+  });
+  overlay.classList.add('open');
+}
+function closeModal(){ overlay.classList.remove('open'); activeItem=null; }
+document.getElementById('mClose').onclick=closeModal;
+overlay.addEventListener('click',function(e){ if(e.target===overlay) closeModal(); });
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeModal(); });
+mAdd.onclick=function(){ if(activeItem){ addToBasket(activeItem); closeModal(); } };
+
+/* ---- Checkout ---- */
+document.getElementById('checkout').onclick=function(){
+  if(basketCount===0){ toast('Your basket is empty &mdash; reveal a gift and drag it in'); return; }
+  var names=items.filter(function(i){return i.inBasket;}).map(function(i){return i.data.name;});
+  toast('Sending <b>'+basketCount+'</b> gift'+(basketCount>1?'s':'')+': '+names.join(', '));
+};
+
+/* X button: take the current gift back out of the basket */
+removeEl.onclick=function(e){
+  e.stopPropagation();
+  if(!currentItem) return;
+  var name=currentItem.data.name;
+  returnToPage(currentItem);
+  currentItem=null; basketCount=0;
+  badgeEl.classList.remove('show');
+  removeEl.classList.remove('show');
+  toast('Removed <b>'+name+'</b> from your basket');
+};
+
+/* ---- Toast ---- */
+var toastEl=document.getElementById('toast'), toastT;
+function toast(html){
+  toastEl.innerHTML=html; toastEl.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(function(){toastEl.classList.remove('show');},2800);
+}
+
+/* Products drift gently at all times (CSS floaty on .art) and pause on hover. Users still drag to reposition. */
+
+/* On resize / breakpoint change: pick up the new tile size and re-flow the
+   scatter so the composition stays balanced and fully on-screen at any width. */
+var relayoutT;
+addEventListener('resize', function(){
+  clearTimeout(relayoutT);
+  relayoutT=setTimeout(function(){
+    PSIZE=cssPx('--psize',150);
+    var b=bounds();
+    items.forEach(function(it){
+      if(it.inBasket) return;                       // leave the chosen gift in the basket
+      it.x=b.l+(b.r-b.l)*it.data.xp;
+      it.y=b.t+(b.b-b.t)*it.data.yp;
+      it.homeX=it.x; it.homeY=it.y;                 // new resting spot for this size
+      it.el.style.transition='transform .35s ease';
+      it.el.style.transform='translate('+it.x+'px,'+it.y+'px)';
+    });
+  },120);
+});
+
+/* ---- Parallax: intro (section 1) transitions into the gift scene (section 2) ----
+   All layers are fixed; scroll progress drives each one at a different rate so the
+   scene rises in with depth. Everything resolves to its true position at p=1, so the
+   product / basket interaction math stays exact once the scene is fully in view. */
+var introLayer=document.querySelector('.copy');
+var heroLayer=document.querySelector('.thank-you-hero-text');
+var barLayer=document.querySelector('.bottombar');
+var marqueeLayer=document.querySelector('.marquee');
+var reduceMotion=(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+var pfRunning=false;
+var smoothP=0;                                         // eased progress that trails the raw scroll target
+function scrollProgress(){
+  var vh=innerHeight||1;
+  var sy=(window.scrollY||window.pageYOffset||0);
+  return Math.min(1, Math.max(0, sy/(vh*2.4)));        // whole transition spans ~2.4 viewports of travel
+}
+function applyParallax(){
+  var vh=innerHeight||1;
+  var pt=scrollProgress();                             // raw target from scroll position
+  // DAMPING: ease the applied progress toward the target each frame instead of snapping to it.
+  // This softens fast scroll ticks so every layer glides in/out rather than jumping 1:1 with the wheel.
+  if(reduceMotion){ smoothP=pt; }
+  else { smoothP += (pt-smoothP)*0.10; if(Math.abs(pt-smoothP)<0.0004) smoothP=pt; }
+  var p=smoothP;
+  var sy=p*(vh*2.4);                                   // smoothed scroll (drives star planes too, so all layers move together)
+  function ss(x){ x=Math.min(1,Math.max(0,x)); return x*x*(3-2*x); }  // smoothstep 0..1
+  // OVERLAPPING crossfade (no blank gap): the intro fades out early, and the scene is
+  // already fading in as it goes — so the hero is well in view the moment the intro clears.
+  var introOp=Math.max(0, 1 - ss(p/0.42));             // intro fully faded by p≈0.42 (eased)
+  var eOut=ss(p/0.42);                                 // intro zoom-through
+  var sceneOp=ss((p-0.12)/0.45);                       // scene opacity: eased in by p≈0.57, overlaps the intro tail
+  var settle=ss((p-0.12)/0.83);                        // scene transforms settle slowly toward p≈0.95
+
+  if(reduceMotion){
+    // calm alternative: pure cross-fade, no zoom / travel / particle drift
+    introLayer.style.transform='none';
+    introLayer.style.opacity=String(introOp);
+    heroLayer.style.transform='none';   heroLayer.style.opacity=String(sceneOp);
+    playfield.style.transform='none';   playfield.style.opacity=String(sceneOp);
+    barLayer.style.transform='translateX(-50%)'; barLayer.style.opacity=String(sceneOp);
+    if(marqueeLayer) marqueeLayer.style.opacity=String(sceneOp);
+    document.body.classList.toggle('scene-active', p>0.9);
+    pfRunning=false;
+    return;
+  }
+
+  // ① hero copy ZOOMS THROUGH: grows past the viewer and fades (camera flies through it)
+  introLayer.style.transform='scale('+(1+0.55*eOut)+')';
+  introLayer.style.opacity=String(introOp);
+  // oversized hero words drift up + scale in behind the products (slow, background plane)
+  heroLayer.style.transform='translateY('+(70*(1-settle))+'px) scale('+(0.9+0.1*settle)+')';
+  heroLayer.style.opacity=String(sceneOp);
+  // ② products start small + far, then come CLOSER (scale up) as you enter the section
+  playfield.style.transform='translateY('+(150*(1-settle))+'px) scale('+(0.72+0.28*settle)+')';
+  playfield.style.opacity=String(sceneOp);
+  // basket + marquee settle in with the scene (keep the -50% centering transform)
+  barLayer.style.transform='translateX(-50%) translateY('+(90*(1-settle))+'px)';
+  barLayer.style.opacity=String(sceneOp);
+  if(marqueeLayer) marqueeLayer.style.opacity=String(sceneOp);
+  // ③ particle planes drift at different speeds for depth
+  for(var i=0;i<starLayers.length;i++){
+    starLayers[i].el.style.transform='translateY('+(-sy*starLayers[i].factor)+'px)';
+  }
+  // enable interaction only once the scale-in has essentially settled (positions match again)
+  document.body.classList.toggle('scene-active', p>0.9);
+  // keep the eased loop alive until the applied progress has caught up to the scroll target
+  if(smoothP!==scrollProgress()){ requestAnimationFrame(applyParallax); }
+  else { pfRunning=false; }
+}
+function requestParallax(){ if(!pfRunning){ pfRunning=true; requestAnimationFrame(applyParallax); } }
+addEventListener('scroll', requestParallax, {passive:true});
+applyParallax();     // set the initial (section-1) state
+
+/* Section 1: clicking anywhere (with the down-arrow cursor) glides down to the scene
+   over ~6 seconds, so the parallax transition reads as a slow, cinematic reveal.       */
+var jumpRAF=null;
+function cancelJump(){ if(jumpRAF){ cancelAnimationFrame(jumpRAF); jumpRAF=null; } }
+function glideTo(targetY, dur){
+  cancelJump();
+  var startY=(window.scrollY||window.pageYOffset||0), dist=targetY-startY, t0=null;
+  function step(ts){
+    if(t0===null) t0=ts;
+    var t=Math.min(1, (ts-t0)/dur);
+    var e=-(Math.cos(Math.PI*t)-1)/2;                  // easeInOutSine — moves right away, settles gently
+    window.scrollTo(0, startY+dist*e);
+    if(t<1){ jumpRAF=requestAnimationFrame(step); } else { jumpRAF=null; }
+  }
+  jumpRAF=requestAnimationFrame(step);
+}
+addEventListener('click', function(){
+  if(!document.body.classList.contains('scene-active')){
+    var target=Math.round((innerHeight||1)*2.45);      // just past where the scene fully settles (p=1)
+    if(reduceMotion){ window.scrollTo(0, target); }     // no long animation for reduced-motion
+    else{ glideTo(target, 2000); }                      // ~2 second eased glide
+  }
+});
+/* let any manual scroll input interrupt the glide */
+['wheel','touchstart','keydown'].forEach(function(ev){
+  addEventListener(ev, cancelJump, {passive:true});
+});
+</script>
+</body>
+</html>
