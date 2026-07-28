@@ -11,8 +11,8 @@
   :root{
     --bg:#050507;
     --ink:#f4f2ee;
-    --accent:#D096FD;      /* toast highlight + remove-button hover */
-    --lime:#D096FD;        /* accent: drag trail + basket glow + badge (lavender) */
+    --accent:#E3BEFF;      /* toast highlight + remove-button hover */
+    --lime:#E3BEFF;        /* accent: drag trail + basket glow + badge (lavender) */
     --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
     --serif:"Source Serif 4", Georgia, serif;
     --display:"Archivo", system-ui, sans-serif;
@@ -52,7 +52,7 @@
   /* section 1: a down-pointing "scroll" arrow acts as the cursor everywhere;
      clicking anywhere jumps to the scene (handled in JS). Reverts to normal in the scene. */
   body:not(.scene-active){
-    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%23D096FD' stroke-width='1.6'/%3E%3Cpath d='M20 11V27M13 20l7 8 7-8' fill='none' stroke='%23D096FD' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 20 20, pointer;
+    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%23E3BEFF' stroke-width='1.6'/%3E%3Cpath d='M20 11V27M13 20l7 8 7-8' fill='none' stroke='%23E3BEFF' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 20 20, pointer;
   }
 
   /* ---------- Particle field (abstract "pixel dust", not literal stars) ---------- */
@@ -198,20 +198,20 @@
     /* --tag-nudge slides the label toward the product (for tiles with wide transparent margins) */
     transform:translateY(-50%) translateX(calc(-1 * var(--tag-nudge,0px))); display:flex; align-items:center; gap:7px;
     font-family:var(--mono); font-size:10px; letter-spacing:.14em; white-space:nowrap;
-    color:#D096FD; opacity:0; transition:opacity .12s ease; pointer-events:none;
+    color:#E3BEFF; opacity:0; transition:opacity .12s ease; pointer-events:none;
   }
   /* name never shows before reveal; once revealed it appears only while hovering */
   .product.revealed.hovered .tag{opacity:1;}
-  .product .tag .sq{width:9px; height:9px; background:#D096FD; border:1.5px solid #D096FD;}
+  .product .tag .sq{width:9px; height:9px; background:#E3BEFF; border:1.5px solid #E3BEFF;}
   .product.left-tag .tag{left:auto; right:calc(100% + 6px); flex-direction:row-reverse; transform:translateY(-50%) translateX(var(--tag-nudge,0px));}
   /* while dragging, the product itself gets a soft lavender glow (head of the comet) */
-  .product.dragging .art{filter:drop-shadow(0 0 16px rgba(var(--glow-rgb,208,150,253),.95)) drop-shadow(0 0 34px rgba(var(--glow-rgb,208,150,253),.45));}
+  .product.dragging .art{filter:drop-shadow(0 0 16px rgba(var(--glow-rgb,227,190,255),.95)) drop-shadow(0 0 34px rgba(var(--glow-rgb,227,190,255),.45));}
 
   /* ---------- Lime comet-trail behind a dragged product ---------- */
   #trail{position:fixed; inset:0; z-index:4; pointer-events:none;}
   .trail-dot{
     position:absolute; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%;
-    background:radial-gradient(circle, rgba(var(--glow-rgb,208,150,253),.55) 0%, rgba(var(--glow-rgb,208,150,253),.28) 40%, rgba(var(--glow-rgb,208,150,253),0) 70%);
+    background:radial-gradient(circle, rgba(var(--glow-rgb,227,190,255),.55) 0%, rgba(var(--glow-rgb,227,190,255),.28) 40%, rgba(var(--glow-rgb,227,190,255),0) 70%);
     animation:trailfade .6s ease-out forwards;
   }
   @keyframes trailfade{
@@ -248,7 +248,7 @@
   .basket::before{
     content:''; position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
     width:158%; height:158%; border-radius:50%; z-index:-1; pointer-events:none;
-    background:radial-gradient(closest-side, rgba(208,150,253,.5), rgba(208,150,253,0) 72%);
+    background:radial-gradient(closest-side, rgba(227,190,255,.5), rgba(227,190,255,0) 72%);
     filter:blur(8px); opacity:0; transition:opacity .5s ease;
   }
   .basket.filled::before{opacity:.8;}
@@ -256,7 +256,7 @@
   .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:transform .15s ease, filter .15s ease;}
   .basket.hot img, .basket.hot svg{transform:scale(1.06);}
   .basket.hot svg{stroke:var(--lime);}
-  .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(208,150,253,.5));}
+  .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(227,190,255,.5));}
   .basket .badge{
     position:absolute; top:-6px; left:-6px; min-width:24px; height:24px; padding:0 6px;
     background:var(--lime); color:#111; border-radius:999px;
@@ -449,7 +449,7 @@
     transition:all .15s ease;
   }
   #gate button:hover{background:#fff; border-color:#fff;}
-  #gate .g-err{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:#D096FD; text-transform:uppercase; min-height:14px; opacity:0; transition:opacity .15s;}
+  #gate .g-err{font-family:var(--mono); font-size:11px; letter-spacing:.16em; color:#E3BEFF; text-transform:uppercase; min-height:14px; opacity:0; transition:opacity .15s;}
   #gate .g-err.show{opacity:1;}
 
   /* ---------- Unlock reveal (plays once, only when the password is entered) ----------
@@ -748,7 +748,7 @@ function hexToRgb(h){ h=(h||'').replace('#',''); if(h.length===3) h=h.replace(/.
 function saturation(r,g,b){ var mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; }
 function boostGlow(r,g,b){ var mx=Math.max(r,g,b,1); var f=Math.min(255/mx, 235/mx + 0.35); r*=f; g*=f; b*=f; return [Math.min(255,Math.round(r)),Math.min(255,Math.round(g)),Math.min(255,Math.round(b))]; }
 function vividFromSwatches(colors){                    // fallback: pick the most saturated curated swatch
-  var best=[208,150,253], bestSat=-1;
+  var best=[227,190,255], bestSat=-1;
   (colors||[]).forEach(function(c){ var rgb=hexToRgb(c); var s=saturation(rgb[0],rgb[1],rgb[2]); if(s>bestSat){ bestSat=s; best=rgb; } });
   return boostGlow(best[0],best[1],best[2]).join(',');
 }
@@ -794,8 +794,8 @@ PRODUCTS.forEach(function(p,i){
   var blur=document.createElement('img'); blur.className='blur'; blur.src=ASSET+p.blur; blur.alt='';
   var sharp=document.createElement('img'); sharp.className='sharp'; sharp.src=ASSET+p.img; sharp.alt=p.name;
   art.appendChild(blur); art.appendChild(sharp);
-  // fixed lavender glow (#D096FD) for every product — same colour as the hover label
-  el.style.setProperty('--glow-rgb', '208,150,253');
+  // fixed lavender glow (#E3BEFF) for every product — same colour as the hover label
+  el.style.setProperty('--glow-rgb', '227,190,255');
   var px=document.createElement('canvas'); px.className='px';
   art.appendChild(px);
   var tag=document.createElement('div'); tag.className='tag';
@@ -845,7 +845,7 @@ function wire(it){
   el.addEventListener('pointermove', function(e){
     if(!el.hasPointerCapture||!el.hasPointerCapture(e.pointerId)) return;
     var dx=e.clientX-it.downX, dy=e.clientY-it.downY;
-    if(Math.abs(dx)>4||Math.abs(dy)>4){ it.moved=true; it.dragging=true; el.classList.add('dragging'); trailLayer.style.setProperty('--glow-rgb', it.glow||'208,150,253'); }
+    if(Math.abs(dx)>4||Math.abs(dy)>4){ it.moved=true; it.dragging=true; el.classList.add('dragging'); trailLayer.style.setProperty('--glow-rgb', it.glow||'227,190,255'); }
     if(it.dragging){
       it.x=it._ox+dx; it.y=it._oy+dy;
       el.style.transform='translate('+it.x+'px,'+it.y+'px)';
