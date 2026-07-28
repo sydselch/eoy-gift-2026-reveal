@@ -231,7 +231,17 @@
     padding-bottom:16px;
   }
   .drag-note svg{stroke:var(--ink); opacity:.8;}
-  .basket{position:relative; pointer-events:auto; transition:transform .15s ease;}
+  .basket{position:relative; pointer-events:auto; opacity:1; transition:transform .15s ease;}
+  /* Basket waits just below the fold (full opacity) and floats up the moment the first
+     gift is revealed. The .floating class is removed on animationend so the resting
+     transform stays free for the .hot scale during drag. */
+  body:not(.has-reveal) .basket{ transform:translateY(200%); }
+  @keyframes basketFloatIn{ from{transform:translateY(200%);} to{transform:translateY(0);} }
+  .basket.floating{ animation:basketFloatIn .95s cubic-bezier(.16,.84,.3,1) forwards; }
+  @media (prefers-reduced-motion: reduce){
+    body:not(.has-reveal) .basket{ transform:none; }   /* no off-screen hide */
+    .basket.floating{ animation:none; }                /* no float */
+  }
   .basket svg{stroke:var(--ink); fill:none; display:block;}
   .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:filter .15s ease;}
   .basket.hot{transform:scale(1.06);}
@@ -260,11 +270,10 @@
     padding:var(--checkout-pad); transition:all .15s ease;
   }
   .checkout:hover{background:#fff; border-color:#fff; color:#111;}
-  /* basket row stays dimmed until the first gift is brought into focus */
-  .bottombar .basket,
+  /* checkout + drag-note stay dimmed until the first gift is brought into focus
+     (the basket itself is never dimmed — it floats in at full opacity instead) */
   .bottombar .checkout,
   .bottombar .drag-note{ opacity:.3; transition:opacity .45s ease; }
-  body.has-reveal .bottombar .basket,
   body.has-reveal .bottombar .checkout{ opacity:1; }
   body.has-reveal .bottombar .drag-note{ opacity:.75; }
 
@@ -899,7 +908,11 @@ function startReveal(it){
       it.revealing=false; it.revealed=true;
       it.el.classList.remove('revealing');
       it.el.classList.add('revealed');               // shows sharp img + product name
-      document.body.classList.add('has-reveal');     // un-dim the basket row now a gift is in focus
+      if(!document.body.classList.contains('has-reveal')){   // first gift revealed —
+        document.body.classList.add('has-reveal');           // un-dim checkout/note + ...
+        basketEl.classList.add('floating');                  // ...float the basket up from the bottom
+        basketEl.addEventListener('animationend', function(){ basketEl.classList.remove('floating'); }, {once:true});
+      }
       if(it.over){                                   // pointer is still on it after the click —
         it.hovered=true; it.el.classList.add('hovered'); // show the name right away
       }
