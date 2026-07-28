@@ -198,20 +198,20 @@
     /* --tag-nudge slides the label toward the product (for tiles with wide transparent margins) */
     transform:translateY(-50%) translateX(calc(-1 * var(--tag-nudge,0px))); display:flex; align-items:center; gap:7px;
     font-family:var(--mono); font-size:10px; letter-spacing:.14em; white-space:nowrap;
-    color:var(--lime); opacity:0; transition:opacity .12s ease; pointer-events:none;
+    color:#D096FD; opacity:0; transition:opacity .12s ease; pointer-events:none;
   }
   /* name never shows before reveal; once revealed it appears only while hovering */
   .product.revealed.hovered .tag{opacity:1;}
-  .product .tag .sq{width:9px; height:9px; background:var(--lime); border:1.5px solid var(--lime);}
+  .product .tag .sq{width:9px; height:9px; background:#D096FD; border:1.5px solid #D096FD;}
   .product.left-tag .tag{left:auto; right:calc(100% + 6px); flex-direction:row-reverse; transform:translateY(-50%) translateX(var(--tag-nudge,0px));}
-  /* while dragging, the product itself gets a soft lime glow (head of the comet) */
-  .product.dragging .art{filter:drop-shadow(0 0 16px rgba(var(--glow-rgb,197,249,16),.95)) drop-shadow(0 0 34px rgba(var(--glow-rgb,197,249,16),.45));}
+  /* while dragging, the product itself gets a soft lavender glow (head of the comet) */
+  .product.dragging .art{filter:drop-shadow(0 0 16px rgba(var(--glow-rgb,208,150,253),.95)) drop-shadow(0 0 34px rgba(var(--glow-rgb,208,150,253),.45));}
 
   /* ---------- Lime comet-trail behind a dragged product ---------- */
   #trail{position:fixed; inset:0; z-index:4; pointer-events:none;}
   .trail-dot{
     position:absolute; width:52px; height:52px; margin:-26px 0 0 -26px; border-radius:50%;
-    background:radial-gradient(circle, rgba(var(--glow-rgb,197,249,16),.55) 0%, rgba(var(--glow-rgb,197,249,16),.28) 40%, rgba(var(--glow-rgb,197,249,16),0) 70%);
+    background:radial-gradient(circle, rgba(var(--glow-rgb,208,150,253),.55) 0%, rgba(var(--glow-rgb,208,150,253),.28) 40%, rgba(var(--glow-rgb,208,150,253),0) 70%);
     animation:trailfade .6s ease-out forwards;
   }
   @keyframes trailfade{
@@ -794,11 +794,8 @@ PRODUCTS.forEach(function(p,i){
   var blur=document.createElement('img'); blur.className='blur'; blur.src=ASSET+p.blur; blur.alt='';
   var sharp=document.createElement('img'); sharp.className='sharp'; sharp.src=ASSET+p.img; sharp.alt=p.name;
   art.appendChild(blur); art.appendChild(sharp);
-  // glow colour pulled from this product's image (fallback = its most vivid swatch)
-  el.style.setProperty('--glow-rgb', vividFromSwatches(p.colors));
-  function setGlow(rgb){ el.style.setProperty('--glow-rgb', rgb); if(it) it.glow=rgb; }
-  if(sharp.complete && sharp.naturalWidth){ sampleGlow(sharp, setGlow); }
-  else { sharp.addEventListener('load', function(){ sampleGlow(sharp, setGlow); }); }
+  // fixed lavender glow (#D096FD) for every product — same colour as the hover label
+  el.style.setProperty('--glow-rgb', '208,150,253');
   var px=document.createElement('canvas'); px.className='px';
   art.appendChild(px);
   var tag=document.createElement('div'); tag.className='tag';
@@ -813,7 +810,7 @@ PRODUCTS.forEach(function(p,i){
     revealed:false, revealing:false, hovered:false, dragging:false, inBasket:false,
     downX:0, downY:0, moved:false
   };
-  it.glow=el.style.getPropertyValue('--glow-rgb').trim();   // current per-product glow (may upgrade after image sampling)
+  it.glow=el.style.getPropertyValue('--glow-rgb').trim();   // fixed lavender glow
   it.homeX=it.x; it.homeY=it.y;                 // original scatter spot to return to
   el.style.transform='translate('+it.x+'px,'+it.y+'px)';
   // vary float speed/phase per product so they don't drift in lockstep
@@ -848,7 +845,7 @@ function wire(it){
   el.addEventListener('pointermove', function(e){
     if(!el.hasPointerCapture||!el.hasPointerCapture(e.pointerId)) return;
     var dx=e.clientX-it.downX, dy=e.clientY-it.downY;
-    if(Math.abs(dx)>4||Math.abs(dy)>4){ it.moved=true; it.dragging=true; el.classList.add('dragging'); trailLayer.style.setProperty('--glow-rgb', it.glow||'197,249,16'); }
+    if(Math.abs(dx)>4||Math.abs(dy)>4){ it.moved=true; it.dragging=true; el.classList.add('dragging'); trailLayer.style.setProperty('--glow-rgb', it.glow||'208,150,253'); }
     if(it.dragging){
       it.x=it._ox+dx; it.y=it._oy+dy;
       el.style.transform='translate('+it.x+'px,'+it.y+'px)';
