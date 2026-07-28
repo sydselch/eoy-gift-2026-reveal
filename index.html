@@ -243,6 +243,15 @@
     66%  {transform:translateY(-3px) rotate(-.5deg);}
     100% {transform:translateY(0)    rotate(0deg);}
   }
+  /* soft green aura behind the basket while a gift is resting in it — "cart is active".
+     Kept a touch softer than the drag glow so it reads as a calm, steady state. */
+  .basket::before{
+    content:''; position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
+    width:158%; height:158%; border-radius:50%; z-index:-1; pointer-events:none;
+    background:radial-gradient(closest-side, rgba(197,249,16,.5), rgba(197,249,16,0) 72%);
+    filter:blur(8px); opacity:0; transition:opacity .5s ease;
+  }
+  .basket.filled::before{opacity:.8;}
   .basket svg{stroke:var(--ink); fill:none; display:block; transition:transform .15s ease;}
   .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:transform .15s ease, filter .15s ease;}
   .basket.hot img, .basket.hot svg{transform:scale(1.06);}
@@ -972,6 +981,7 @@ function addToBasket(it){
   basketCount=1;
   badgeEl.textContent='1'; badgeEl.classList.add('show');
   removeEl.classList.add('show');                   // X to remove appears once a gift is in
+  basketEl.classList.add('filled');                 // switch on the steady green "cart active" aura
   basketEl.classList.add('hot'); setTimeout(function(){basketEl.classList.remove('hot');},400);
   if(replaced) toast('Swapped in <b>'+it.data.name+'</b> &mdash; only one gift per person');
   else toast('Added <b>'+it.data.name+'</b> to your basket');
@@ -1029,6 +1039,7 @@ removeEl.onclick=function(e){
   var name=currentItem.data.name;
   returnToPage(currentItem);
   currentItem=null; basketCount=0;
+  basketEl.classList.remove('filled');              // cart empty again — fade the aura out
   badgeEl.classList.remove('show');
   removeEl.classList.remove('show');
   toast('Removed <b>'+name+'</b> from your basket');
