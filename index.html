@@ -11,8 +11,8 @@
   :root{
     --bg:#050507;
     --ink:#f4f2ee;
-    --accent:#ff8a3d;      /* reveal / selection highlight */
-    --lime:#C5F910;        /* drag trail + basket glow + badge */
+    --accent:#D096FD;      /* toast highlight + remove-button hover */
+    --lime:#D096FD;        /* accent: drag trail + basket glow + badge (lavender) */
     --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
     --serif:"Source Serif 4", Georgia, serif;
     --display:"Archivo", system-ui, sans-serif;
@@ -52,7 +52,7 @@
   /* section 1: a down-pointing "scroll" arrow acts as the cursor everywhere;
      clicking anywhere jumps to the scene (handled in JS). Reverts to normal in the scene. */
   body:not(.scene-active){
-    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%23C5F910' stroke-width='1.6'/%3E%3Cpath d='M20 11V27M13 20l7 8 7-8' fill='none' stroke='%23C5F910' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 20 20, pointer;
+    cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='none' stroke='%23D096FD' stroke-width='1.6'/%3E%3Cpath d='M20 11V27M13 20l7 8 7-8' fill='none' stroke='%23D096FD' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") 20 20, pointer;
   }
 
   /* ---------- Particle field (abstract "pixel dust", not literal stars) ---------- */
@@ -248,7 +248,7 @@
   .basket::before{
     content:''; position:absolute; left:50%; top:44%; transform:translate(-50%,-50%);
     width:158%; height:158%; border-radius:50%; z-index:-1; pointer-events:none;
-    background:radial-gradient(closest-side, rgba(197,249,16,.5), rgba(197,249,16,0) 72%);
+    background:radial-gradient(closest-side, rgba(208,150,253,.5), rgba(208,150,253,0) 72%);
     filter:blur(8px); opacity:0; transition:opacity .5s ease;
   }
   .basket.filled::before{opacity:.8;}
@@ -256,7 +256,7 @@
   .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:transform .15s ease, filter .15s ease;}
   .basket.hot img, .basket.hot svg{transform:scale(1.06);}
   .basket.hot svg{stroke:var(--lime);}
-  .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(197,249,16,.5));}
+  .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(208,150,253,.5));}
   .basket .badge{
     position:absolute; top:-6px; left:-6px; min-width:24px; height:24px; padding:0 6px;
     background:var(--lime); color:#111; border-radius:999px;
@@ -748,7 +748,7 @@ function hexToRgb(h){ h=(h||'').replace('#',''); if(h.length===3) h=h.replace(/.
 function saturation(r,g,b){ var mx=Math.max(r,g,b), mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; }
 function boostGlow(r,g,b){ var mx=Math.max(r,g,b,1); var f=Math.min(255/mx, 235/mx + 0.35); r*=f; g*=f; b*=f; return [Math.min(255,Math.round(r)),Math.min(255,Math.round(g)),Math.min(255,Math.round(b))]; }
 function vividFromSwatches(colors){                    // fallback: pick the most saturated curated swatch
-  var best=[197,249,16], bestSat=-1;
+  var best=[208,150,253], bestSat=-1;
   (colors||[]).forEach(function(c){ var rgb=hexToRgb(c); var s=saturation(rgb[0],rgb[1],rgb[2]); if(s>bestSat){ bestSat=s; best=rgb; } });
   return boostGlow(best[0],best[1],best[2]).join(',');
 }
