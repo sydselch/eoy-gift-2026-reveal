@@ -80,6 +80,7 @@
   /* ---------- Reduced motion: keep it calm — fade, don't fly ---------- */
   @media (prefers-reduced-motion: reduce){
     .product .art{animation:none !important;}
+    .basket{animation:none !important;}
     .trail-dot{display:none;}
     .marquee .track{animation:none;}
   }
@@ -231,20 +232,20 @@
     padding-bottom:16px;
   }
   .drag-note svg{stroke:var(--ink); opacity:.8;}
-  .basket{position:relative; pointer-events:auto; opacity:1; transition:transform .15s ease;}
-  /* Basket waits just below the fold (full opacity) and floats up the moment the first
-     gift is revealed. The .floating class is removed on animationend so the resting
-     transform stays free for the .hot scale during drag. */
-  body:not(.has-reveal) .basket{ transform:translateY(200%); }
-  @keyframes basketFloatIn{ from{transform:translateY(200%);} to{transform:translateY(0);} }
-  .basket.floating{ animation:basketFloatIn .95s cubic-bezier(.16,.84,.3,1) forwards; }
-  @media (prefers-reduced-motion: reduce){
-    body:not(.has-reveal) .basket{ transform:none; }   /* no off-screen hide */
-    .basket.floating{ animation:none; }                /* no float */
+  /* Basket is solid at full opacity the whole time and drifts gently in place,
+     like the products floating in space. The float lives on the container; the
+     drag-over pop scales the art inside, so the two transforms never fight. */
+  .basket{position:relative; pointer-events:auto; opacity:1;
+    animation:basketFloat 7.5s ease-in-out infinite;}
+  @keyframes basketFloat{
+    0%   {transform:translateY(0)    rotate(0deg);}
+    33%  {transform:translateY(-8px) rotate(.6deg);}
+    66%  {transform:translateY(-3px) rotate(-.5deg);}
+    100% {transform:translateY(0)    rotate(0deg);}
   }
-  .basket svg{stroke:var(--ink); fill:none; display:block;}
-  .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:filter .15s ease;}
-  .basket.hot{transform:scale(1.06);}
+  .basket svg{stroke:var(--ink); fill:none; display:block; transition:transform .15s ease;}
+  .basket img{width:var(--basket-w); height:auto; display:block; filter:drop-shadow(0 6px 16px rgba(0,0,0,.5)); transition:transform .15s ease, filter .15s ease;}
+  .basket.hot img, .basket.hot svg{transform:scale(1.06);}
   .basket.hot svg{stroke:var(--lime);}
   .basket.hot img{filter:drop-shadow(0 0 16px var(--lime)) drop-shadow(0 0 30px rgba(197,249,16,.5));}
   .basket .badge{
@@ -271,7 +272,7 @@
   }
   .checkout:hover{background:#fff; border-color:#fff; color:#111;}
   /* checkout + drag-note stay dimmed until the first gift is brought into focus
-     (the basket itself is never dimmed — it floats in at full opacity instead) */
+     (the basket itself is never dimmed — it stays solid at full opacity throughout) */
   .bottombar .checkout,
   .bottombar .drag-note{ opacity:.3; transition:opacity .45s ease; }
   body.has-reveal .bottombar .checkout{ opacity:1; }
@@ -908,11 +909,7 @@ function startReveal(it){
       it.revealing=false; it.revealed=true;
       it.el.classList.remove('revealing');
       it.el.classList.add('revealed');               // shows sharp img + product name
-      if(!document.body.classList.contains('has-reveal')){   // first gift revealed —
-        document.body.classList.add('has-reveal');           // un-dim checkout/note + ...
-        basketEl.classList.add('floating');                  // ...float the basket up from the bottom
-        basketEl.addEventListener('animationend', function(){ basketEl.classList.remove('floating'); }, {once:true});
-      }
+      document.body.classList.add('has-reveal');     // un-dim the checkout + drag-note now a gift is in focus
       if(it.over){                                   // pointer is still on it after the click —
         it.hovered=true; it.el.classList.add('hovered'); // show the name right away
       }
@@ -928,9 +925,10 @@ function overBasket(it){
   var sz=it.el.offsetWidth||PSIZE, m=8;
   return (it.x+sz)>(b.left-m) && it.x<(b.right+m) && (it.y+sz)>(b.top-m) && it.y<(b.bottom+m);
 }
-// can't rest on/behind the basket — spring back to its scatter spot
+// an un-revealed gift can't go in the basket — spring it back to where it was picked up
 function bounceHome(it){
-  it.x=it.homeX; it.y=it.homeY;
+  it.x=(it._ox!=null)?it._ox:it.homeX;
+  it.y=(it._oy!=null)?it._oy:it.homeY;
   it.el.style.transition='transform .45s cubic-bezier(.34,1.56,.64,1)';
   it.el.style.transform='translate('+it.x+'px,'+it.y+'px)';
   setTimeout(function(){ if(!it.dragging) it.el.style.transition='none'; }, 470);
